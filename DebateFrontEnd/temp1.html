@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Moderate a Debate!</title>
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+    <script src="//code.jquery.com/jquery-1.11.3.min.js"></script>
+</head>
+
+<body>
+<section class="page-header">
+    <h1 class="project-name">Moderate an (artificially) Intelligent Republican Debate</h1>
+</section>
+
+<section class="main-content">
+    <div id="divHere"></div>
+
+    <div class="forms">
+        <form class='inputForm' name='form' id='form'>
+            <input type="text" style='width:70%' class="speakerName"/>
+            <p class="suggest">Try "bush", "trump", or "cruz."</p>
+
+            <input type="submit" id='enterDebate' value="Enter speaker to debate"/>
+        </form>
+
+        <form class="stopDebate">
+            <input type="submit" id='stopDebate' value="Time out"/>
+        </form>
+    </div>
+
+    <div class="container">
+        <div class="args"></div>
+    </div>
+
+</section>
+
+<script>
+
+    //sample word from previous argument
+    var prevWord = 'president';
+    var names = [];
+    //periodically sample randomly based on name frequency
+    var timedID = window.setInterval(function () {
+        var rand = Math.floor(Math.random() * names.length);
+        getLine(names[rand]);
+    }, 5000);
+
+
+    $(".stopDebate").submit(function (event) {
+        console.log("Got to stop the debate!")
+
+        event.preventDefault();
+        window.clearInterval(timedID);
+    });
+
+    $("#form").submit(function (event) {
+
+        //prevent auto-refreshing after form submission
+        event.preventDefault();
+
+        var newName = $(".speakerName").val();
+
+        //a list of names in current debate
+        //frequency determined by moderator
+        names.push(newName);
+
+        getLine(newName);
+
+    });
+
+    //name is a string
+    var getLine = function (name) {
+        if (name == null) {
+            return;
+        }
+        $.ajax({
+            url: "http://127.0.0.1:3000/temp1",
+            dataType: 'json',
+            data: {'speaker': name, 'prev': prevWord},
+            type: 'POST'
+        }).done(function (data) {
+            if (data['S'].length < 2)
+                return;
+
+            var container = $(".container");
+            console.log('Got back to front end');
+            console.log(data['S']);
+            //console.log(data.toString());
+            //console.log(JSON.stringify(data, null, 4));
+            var newArg = data['S'] + '.';
+            prevWord = data['prev'];
+
+            console.log(container.children().length);
+            if (container.children().length > 5) {
+                container.children("div:first").remove();
+            }
+
+            var nameDiv = "<div id='candName'>" +
+                    name.toUpperCase() + ":" + "</div>";
+            var newE = "<div class='args'>" + nameDiv + newArg + "</div>";
+
+            container.append(newE);
+            //container.append("<div><br><br/></div>");
+
+        });
+
+    };
+</script>
+</body>
+</html>
